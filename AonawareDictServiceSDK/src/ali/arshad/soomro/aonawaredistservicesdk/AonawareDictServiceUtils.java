@@ -32,23 +32,37 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import android.content.Context;
 
 public class AonawareDictServiceUtils {
 	public static final String AONAWARE_TAG = "AONAWARE_TAG";
-	protected static final String URL = "http://services.aonaware.com/DictService/DictService.asmx/Define?word=";
+	protected static final String WORD_URL = "http://services.aonaware.com/DictService/DictService.asmx/Define?word=";
+	protected final String DIC_URL  = "http://services.aonaware.com/DictService/DictService.asmx/DefineInDict?DictId=";
+	protected final String WORD = "&word=";
+	/**This ID points to <b>The Collaborative International Dictionary of English v.0.44</b>*/
+	public static final String ID_CIDE = "gcide";
+	/**This ID points to <b>Moby Thesaurus II by Grady Ward, 1.0</b>*/
+	public static final String ID_MT_II = "moby-thes";
+	/**This ID points to <b>WordNet (r) 2.0</b>*/
+	public static final String ID_WN = "wn";	
 
 	public static AonawareDictServiceUtils getInstance() {
 		return (new AonawareDictServiceUtils());
 	}
 
-	public AonawareDictServiceWordInfo queryWord(Context context, String word) {
+	/**This method returns word definition from default <b>Dictionary</b>
+	 * @param context Context, the context of method call.
+	 * @param word String, the word finding Definition for.
+	 * @throws SAXParseException 
+	 * */
+	public AonawareDictServiceWordInfo queryWord(Context context, String word) throws SAXParseException {
 		AonawareDictServiceUtils dictServiceUtils = AonawareDictServiceUtils
 				.getInstance();
 		String wordDef = getWordDefinition(context, word);
 		if (wordDef.equals("")) {
-			return null;
+			throw new NullPointerException("Invalid input");
 		} else {
 			Document document = dictServiceUtils
 					.convertWordDefinationToDocument(context, wordDef);
@@ -58,10 +72,35 @@ public class AonawareDictServiceUtils {
 		}
 	}
 
-	protected String getWordDefinition(Context context, String word) {
+	/**This method returns word definition from <b>Dictionary</b> of specified <b>ID</b>
+	 * @param context Context, the context of method call.
+	 * @param dictId String, id of Dictionary.
+	 * @param word String, the word finding Definition for.
+	 * @throws SAXParseException 
+	 * */
+	
+	public AonawareDictServiceWordInfo queryWord(Context context, String dictId, String word) throws SAXParseException {
+		AonawareDictServiceUtils dictServiceUtils = AonawareDictServiceUtils
+				.getInstance();
+		String wordDef = getWordDefinition(context, dictId, word);
+
+		if (wordDef.equals("") || dictId.equals("")) {
+			throw new NullPointerException("Invalid input");
+		} else {
+			Document document = dictServiceUtils
+					.convertWordDefinationToDocument(context, wordDef);
+			AonawareDictServiceWordInfo dictServiceWordInfo = parseWordInfo(
+					context, document);
+			return dictServiceWordInfo;
+		}
+	}
+
+	private String getWordDefinition(Context context, String word) {
 		StringBuilder wordDefination = new StringBuilder();
 		HttpClient httpClient = new DefaultHttpClient();
-		StringBuilder queryString = new StringBuilder(URL);
+		StringBuilder queryString = new StringBuilder(DIC_URL);
+		queryString.append(ID_WN);
+		queryString.append(WORD);
 		queryString.append(word);
 		HttpGet request = new HttpGet(queryString.toString());
 		HttpResponse httpResponse;
@@ -84,8 +123,36 @@ public class AonawareDictServiceUtils {
 		}
 	}
 
-	protected Document convertWordDefinationToDocument(Context context,
-			String defSource) {
+	private String getWordDefinition(Context context, String dictId, String word){
+		StringBuilder wordDefination = new StringBuilder();
+		HttpClient httpClient = new DefaultHttpClient();
+		StringBuilder queryString = new StringBuilder(DIC_URL);
+		queryString.append(dictId);
+		queryString.append(WORD);
+		queryString.append(word);
+		HttpGet request = new HttpGet(queryString.toString());
+		HttpResponse httpResponse;
+		try {
+			httpResponse = httpClient.execute(request);
+			HttpEntity httpEntity = httpResponse.getEntity();
+			BufferedReader bufferedReader = new BufferedReader(
+					new InputStreamReader(httpEntity.getContent()));
+			String readLineString = "";
+			while ((readLineString = bufferedReader.readLine()) != null) {
+				wordDefination.append(readLineString + "\n");
+			}
+			return (wordDefination.toString());
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+			return null;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	private Document convertWordDefinationToDocument(Context context,
+			String defSource)throws org.xml.sax.SAXParseException{
 		Document destDocument = null;
 
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -93,8 +160,7 @@ public class AonawareDictServiceUtils {
 
 		try {
 			documentBuilder = factory.newDocumentBuilder();
-			destDocument = documentBuilder.parse(new ByteArrayInputStream(
-					defSource.getBytes()));
+			destDocument = documentBuilder.parse(new ByteArrayInputStream(defSource.getBytes()));
 			return destDocument;
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
@@ -110,7 +176,7 @@ public class AonawareDictServiceUtils {
 		}
 	}
 
-	protected AonawareDictServiceWordInfo parseWordInfo(Context context,
+	private AonawareDictServiceWordInfo parseWordInfo(Context context,
 			Document docSource) {
 		AonawareDictServiceWordInfo dictServiceWordInfo = new AonawareDictServiceWordInfo();
 
@@ -132,7 +198,7 @@ public class AonawareDictServiceUtils {
 		}
 	}
 
-	protected String getNodeText(Node node) throws NoSuchMethodException {
+	private String getNodeText(Node node) throws NoSuchMethodException {
 		String string = "";
 		string = node.getTextContent();
 

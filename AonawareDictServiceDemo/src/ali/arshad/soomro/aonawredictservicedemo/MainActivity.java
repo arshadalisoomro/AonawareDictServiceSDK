@@ -13,12 +13,18 @@ package ali.arshad.soomro.aonawredictservicedemo;
  *  BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  *  or implied. See the License for the specific language governing
  *  permissions and limitations under the License. */
+import org.xml.sax.SAXParseException;
+
+import ali.arshad.soomro.aonawaredistservicesdk.AonawareDictServiceUtils;
 import ali.arshad.soomro.aonawaredistservicesdk.AonawareDictServiceWordInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -30,40 +36,58 @@ public class MainActivity extends Activity {
 	protected TextView word, defination = null;
 	protected ProgressDialog progressDialog = null;
 
+	protected AonawareDictServiceUtils serviceUtils = null;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		serviceUtils = AonawareDictServiceUtils.getInstance();
+
 		button = (Button) findViewById(R.id.searchButton);
 		editText = (EditText) findViewById(R.id.searchInput);
 		word = (TextView) findViewById(R.id.word);
 		defination = (TextView) findViewById(R.id.defination);
-		String query = editText.getText().toString();
-		new AsyncTask<String, Void, AonawareDictServiceWordInfo>() {
-			@Override
-			protected void onPreExecute() {
-				progressDialog = new ProgressDialog(MainActivity.this);
-				progressDialog.setTitle("Wait...");
-				progressDialog.setMessage("Data is being loaded...");
-				progressDialog.show();
-			}
+		
+
+		button.setOnClickListener(new OnClickListener() {
 
 			@Override
-			protected AonawareDictServiceWordInfo doInBackground(
-					String... params) {
-				
-				return null;
-			}
-
-			@Override
-			protected void onPostExecute(AonawareDictServiceWordInfo result) {
+			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				super.onPostExecute(result);
-				word.setText(result.getWord());
-				defination.setText(result.getWordDefination());
-				progressDialog.dismiss();
+				new AsyncTask<String, Void, AonawareDictServiceWordInfo>() {
+					@Override
+					protected void onPreExecute() {
+						progressDialog = new ProgressDialog(MainActivity.this);
+						progressDialog.setTitle("Wait...");
+						progressDialog.setMessage("Data is being loaded...");
+						progressDialog.show();
+					}
+
+					@Override
+					protected AonawareDictServiceWordInfo doInBackground(
+							String... params) {
+
+						try {
+							return serviceUtils.queryWord(MainActivity.this, AonawareDictServiceUtils.getInstance().ID_CIDE, editText.getText().toString());
+						} catch (SAXParseException e) {
+							// TODO Auto-generated catch block
+							Log.e("TAG", "No data recieved");
+							return null;
+						}
+					}
+					@Override
+					protected void onPostExecute(AonawareDictServiceWordInfo result) {
+						word.setText(result.getWord());
+						defination.setText(result.getWordDefination());
+						progressDialog.dismiss();
+					}
+				}.execute(null, null, null);
+
 			}
-		}.execute(query);
+		});
+
 
 	}
 
