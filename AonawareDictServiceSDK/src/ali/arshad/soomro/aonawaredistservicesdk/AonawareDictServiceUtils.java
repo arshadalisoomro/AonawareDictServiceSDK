@@ -38,7 +38,7 @@ import android.content.Context;
 
 public class AonawareDictServiceUtils {
 	public static final String AONAWARE_TAG = "AONAWARE_TAG";
-	protected static final String WORD_URL = "http://services.aonaware.com/DictService/DictService.asmx/Define?word=";
+	//protected static final String WORD_URL = "http://services.aonaware.com/DictService/DictService.asmx/Define?word=";
 	protected final String DIC_URL  = "http://services.aonaware.com/DictService/DictService.asmx/DefineInDict?DictId=";
 	protected final String WORD = "&word=";
 	/**This ID points to <b>The Collaborative International Dictionary of English v.0.44</b>*/
@@ -47,6 +47,7 @@ public class AonawareDictServiceUtils {
 	public static final String ID_MT_II = "moby-thes";
 	/**This ID points to <b>WordNet (r) 2.0</b>*/
 	public static final String ID_WN = "wn";	
+	protected static final String NOT_FOUND = "Not found";
 
 	public static AonawareDictServiceUtils getInstance() {
 		return (new AonawareDictServiceUtils());
@@ -78,7 +79,7 @@ public class AonawareDictServiceUtils {
 	 * @param word String, the word finding Definition for.
 	 * @throws SAXParseException 
 	 * */
-	
+
 	public AonawareDictServiceWordInfo queryWord(Context context, String dictId, String word) throws SAXParseException {
 		AonawareDictServiceUtils dictServiceUtils = AonawareDictServiceUtils
 				.getInstance();
@@ -182,24 +183,42 @@ public class AonawareDictServiceUtils {
 
 		try {
 			Node wordNode = docSource.getElementsByTagName("Word").item(0);
+			Node definationNode = docSource.getElementsByTagName("Definition").item(0);
+			String word = getNodeText(wordNode);
+			String dictId = getNodeText(docSource.getElementsByTagName("Id").item(0));
+			String dictName = getNodeText(docSource.getElementsByTagName("Name").item(0));
+			String wordDefination = getNodeText(docSource.getElementsByTagName("WordDefinition").item(1));
 
-			dictServiceWordInfo.setWord(getNodeText(wordNode));
-			dictServiceWordInfo.setDictId(getNodeText(docSource
-					.getElementsByTagName("Id").item(0)));
-			dictServiceWordInfo.setDictName(getNodeText(docSource
-					.getElementsByTagName("Name").item(0)));
-			dictServiceWordInfo.setWordDefination(getNodeText(docSource
-					.getElementsByTagName("WordDefinition").item(1)));
-			return dictServiceWordInfo;
+			if (!definationNode.hasChildNodes()) {
+				dictServiceWordInfo.setWord(getNodeText(wordNode));
+				dictServiceWordInfo.setDictId(NOT_FOUND);
+				dictServiceWordInfo.setDictName(NOT_FOUND);
+				dictServiceWordInfo.setWordDefination(NOT_FOUND);
+				return dictServiceWordInfo;
+			}else {
+				dictServiceWordInfo.setWord(word);
+				dictServiceWordInfo.setDictId(dictId);
+				dictServiceWordInfo.setDictName(dictName);
+				dictServiceWordInfo.setWordDefination(wordDefination);
+				return dictServiceWordInfo;
+			}
 		} catch (NullPointerException e) {
-			return null;
+			dictServiceWordInfo.setWord(NOT_FOUND);
+			dictServiceWordInfo.setDictId(NOT_FOUND);
+			dictServiceWordInfo.setDictName(NOT_FOUND);
+			dictServiceWordInfo.setWordDefination(NOT_FOUND);
+			return dictServiceWordInfo;
 		} catch (NoSuchMethodException e) {
-			return null;
+			dictServiceWordInfo.setWord(NOT_FOUND);
+			dictServiceWordInfo.setDictId(NOT_FOUND);
+			dictServiceWordInfo.setDictName(NOT_FOUND);
+			dictServiceWordInfo.setWordDefination(NOT_FOUND);
+			return dictServiceWordInfo;
 		}
 	}
 
 	private String getNodeText(Node node) throws NoSuchMethodException {
-		String string = "";
+		String string = "";		
 		string = node.getTextContent();
 
 		return (string);
