@@ -4,6 +4,13 @@ AonawareDictServiceSDK
 An SDK for http://services.aonaware.com/DictService/DictService.asmx, By Arshad Ali Soomro.
 This is alpha version, and will be enhanced further, Any contribution is most welcome.
 
+## Donation
+You can support the project and thank the author for his hard work :)
+
+* **[GitTip](https://www.gittip.com/arshadalisoomro/)** - arshadalisoomro
+
+
+
 Usage
 ------
 
